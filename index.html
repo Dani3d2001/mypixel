@@ -67,22 +67,79 @@ body{
 ::-webkit-scrollbar-thumb:hover{background:#777}
 ::-webkit-scrollbar-track{background:transparent}
 /* --- header --- */
-header{
-  display:flex;align-items:center;gap:12px;
-  height:64px;padding:0 16px;background:var(--panel);
-  box-shadow:0 1px 3px #0007;margin-bottom:15px
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 64px;
+  padding: 0 16px;
+  background: var(--panel);
+  box-shadow: 0 1px 3px #0007;
+  margin-bottom: 15px;
 }
-header h1{flex:1;font-size:1.8rem;font-weight:600;text-align:center}
-#starBtn{
-  background:#f0f0f0;color:#000;font-weight:600;padding:8px 12px;border-radius:8px;
-  display:flex;align-items:center;gap:6px;text-decoration:none;transition:opacity .2s
+header h1 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+  color: var(--text);
 }
-#starBtn:hover{opacity:.85}
-#shareBtnTop{
-  background:#2764c3;padding:8px 14px;border:none;border-radius:8px;
-  font-weight:600;color:var(--text);cursor:pointer;transition:opacity .2s;margin-right:9px
+header .logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  flex: 1;
+  text-decoration: none;
+  color: var(--text);
 }
-#shareBtnTop:disabled{opacity:.45;cursor:not-allowed}
+header .logo:link,
+header .logo:visited,
+header .logo:hover,
+header .logo:active {
+  color: var(--text);
+  text-decoration: none;
+}
+header .logo:hover {
+  opacity: 0.85;
+}
+
+.logo-img {
+  width: 40px;
+  height: 40px;
+  margin-top: 5px;
+}
+#starBtn {
+  background: #f0f0f0;
+  color: #000;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+#starBtn:hover {
+  opacity: 0.85;
+}
+#shareBtnTop {
+  background: #2764c3;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-right: 9px;
+}
+#shareBtnTop:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 /* --- layout --- */
 .app{flex:1;display:flex;gap:24px;padding:0 16px 24px;overflow:hidden}
 .paletteCol{
@@ -186,7 +243,10 @@ textarea#svgCode{
 
 <header>
   <a id="starBtn" href="https://github.com/luizbizzio/mypixel" target="_blank">⭐ Star</a>
-  <h1>MyPixel</h1>
+  <a href="https://mypixel.dev" class="logo">
+    <img src="icon.svg" alt="MyPixel Logo" class="logo-img">
+    <h1>MyPixel</h1>
+  </a>
   <button id="shareBtnTop" disabled>Share Link</button>
 </header>
 
@@ -229,7 +289,7 @@ textarea#svgCode{
     <!-- adjustments -->
     <div class="panel">
       <h2>Adjustments</h2>
-      <label>Scale (%)      <input id="scaleInput" type="number" value="1000" min="100" max="10000" step="100"></label>
+      <label>Scale (%) <input id="scaleInput" type="number" value="1000" min="10" max="10000" step="100"></label>
       <label>Opacity (<span id="opVal">100%</span>) <input id="opacityInput" type="range" min="0" max="100" value="100"></label>
       <label>Saturation (<span id="satVal">100%</span>) <input id="satInput" type="range" min="0" max="100" value="100"></label>
 
@@ -388,7 +448,7 @@ shareBtnTop.onclick=()=>{if(!origImg)return;updateURL();
 /* redraw --------------------------- */
 function redraw(){
   if(!origImg)return;
-  const scale=Math.max(100,Math.min(10000,+scaleIn.value))/100;
+  const scale=Math.max(10,Math.min(10000,+scaleIn.value))/100;
   const alpha=+opIn.value/100,sat=+satIn.value/100;
   scaledW=Math.round(origImg.width*scale);scaledH=Math.round(origImg.height*scale);
   cScaled.width=scaledW;cScaled.height=scaledH;
@@ -434,7 +494,7 @@ function extractPalette(off){
 function scheduleSvg(){clearTimeout(svgTimer);svgTimer=setTimeout(makeSvg,300);}
 function makeSvg(){
   if(!origImg)return;
-  const scale=Math.max(100,Math.min(10000,+scaleIn.value))/100,
+  const scale=Math.max(10,Math.min(10000,+scaleIn.value))/100,
         alpha=+opIn.value/100,sat=+satIn.value/100;
   const w=origImg.width,h=origImg.height,off=new OffscreenCanvas(w,h),
         octx=off.getContext('2d',ctxOpt);
