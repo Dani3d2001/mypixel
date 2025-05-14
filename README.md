@@ -1,25 +1,25 @@
-# MyPixel - Pixel Art Enhancer
+# MyPixel - Pixel Art Enhancer 🎨
 
 
 **Your browser, your pixels, perfected.** MyPixel brings pixel art back to life with **crisp scaling**, **real-time color controls**, and **vector exports**—all running **100% client-side**.
 
 ---
 
-## ✨ Feature Highlights
+## ✨ Feature Highlights ✨
 
-| 🖌️ Feature                  | 🔎 Description                                                                                              |
-|:---------------------------|:------------------------------------------------------------------------------------------------------------|
-| **Crisp Non‑Blurred Scale** | Scale from **10%** to **10 000%** with no blur—each pixel remains razor-sharp.                                |
-| **Opacity & Saturation**    | Live-range sliders (0–100%) let you tweak transparency and color intensity, previewing instantly.          |
-| **Side‑by‑Side Preview**    | Instantly compare **Original** vs **Modified** in the same view.                                            |
-| **Auto Color Palette**      | Extract top 32 colors automatically; click any swatch to copy its HEX code.                                 |
-| **Magnifier & Picker**      | Hover to magnify pixel details and pick HEX/RGB values; click to copy into clipboard.                      |
-| **True Vector SVG**         | Export as genuine SVG: fully scalable vector paths, not embedded bitmaps.                                   |
-| **Multi‑Format Export**     | Download or copy as **PNG**, **WEBP**, **AVIF**, **SVG**, or **Base64**.                                    |
-| **Batch Processing**        | Process multiple files at once; download a ZIP of your chosen format.                                       |
-| **File Info & Rename**      | View/edit filename, file size, dimensions, aspect ratio, and see export size estimates before saving.      |
-| **Shareable Links**         | Generate a URL with Base64‑encoded image—shareable without uploads, stored in your browser history.         |
-| **PWA & Mobile‑Ready**      | Install as a Progressive Web App on desktop or mobile; use **offline** thanks to Service Worker caching.    |
+| Feature                                 | Description                                                                                              |
+|:----------------------------------------|:----------------------------------------------------------------------------------------------------------|
+| 🔍 **Crisp Non‑Blurred Scale**           | Scale from **10%** to **10 000%** with no blur—each pixel remains razor-sharp.                            |
+| 🌈 **Opacity & Saturation**              | Live-range sliders (0–100%) let you tweak transparency and color intensity, previewing instantly.         |
+| 👀 **Side‑by‑Side Preview**              | Instantly compare **Original** vs **Modified** in the same view.                                          |
+| 🎨 **Auto Color Palette**                | Extract top 32 colors automatically; click any swatch to copy its HEX code.                               |
+| 🔍 **Magnifier & Picker**                | Hover to magnify pixel details and pick HEX/RGB values; click to copy into clipboard.                    |
+| 📐 **True Vector SVG**                   | Export as genuine SVG: fully scalable vector paths, not embedded bitmaps.                                 |
+| 📦 **Multi‑Format Export**               | Download or copy as **PNG**, **WEBP**, **AVIF**, **SVG**, or **Base64**.                                  |
+| 🗂️ **Batch Processing**                  | Process multiple files at once; download a ZIP of your chosen format.                                     |
+| 📝 **File Info & Rename**                | View/edit filename, file size, dimensions, aspect ratio, and see export size estimates before saving.    |
+| 🔗 **Shareable Links**                   | Generate a URL with Base64‑encoded image—shareable without uploads, stored in your browser history.       |
+| 📱 **PWA & Mobile‑Ready**                | Install as a Progressive Web App on desktop or mobile; use **offline** thanks to Service Worker caching.  |
 
 ---
 
@@ -44,11 +44,16 @@
   </tr>
 </table>
 
-> Notice the crisp edges and preserved block shapes—no blur, no distortion.
-
+> Notice the crisp edges and preserved block shapes in both PNG and SVG—no blur, no distortion.
+>
+> **Art credit:** Original pixel art by [F404X](https://github.com/F404X)
 ---
 
 ## 🚀 Quick Start
+
+<p align="center">
+  <img src="/screenshots/desktop-screenshot.jpg" alt="Desktop Screenshot" width="1000" />
+</p>
 
 1. **Upload**: Drag & drop or click the green panel to select your PNG/GIF sprite.
 2. **Adjust**: Set **Scale**, **Opacity**, **Saturation** with intuitive sliders.
