@@ -1,0 +1,27 @@
+{
+  "name": "MyPixel",
+  "short_name": "MyPixel",
+  "start_url": "/",
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-screenshot.jpg",
+      "sizes": "2880x1600",
+      "type": "image/jpg",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshots/mobile-screenshot.jpg",
+      "sizes": "1200x2670",
+      "type": "image/jpg",
+      "form_factor": "narrow"
+    }
+  ],
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon.png", "type": "image/png", "sizes": "512x512" }
+  ],
+  "theme_color": "#2d2d2d",
+  "background_color": "#2d2d2d",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"]
+}
