@@ -55,7 +55,7 @@
   <img src="/screenshots/desktop-screenshot.jpg" alt="Desktop Screenshot" width="1000" />
 </p>
 
-1. **Upload**: Drag & drop or click the green panel to select your PNG/GIF sprite.
+1. **Upload**: Drag & drop or click the green panel to select your PNG sprite.
 2. **Adjust**: Set **Scale**, **Opacity**, **Saturation** with intuitive sliders.
 3. **Review**: Check the **palette**, hover to pick colors, compare before/after.
 4. **Export**:
