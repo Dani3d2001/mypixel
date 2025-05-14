@@ -337,167 +337,277 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 </script>
 
 <script>
-/* refs ----------------------------- */
-const $=id=>document.getElementById(id);
-const ctxOpt={willReadFrequently:true};
-const shareBtnTop=$('shareBtnTop');
-const cOrig=$('canvasOriginal'),cScaled=$('canvasScaled');
-const ctxOrig=cOrig.getContext('2d',ctxOpt),ctxScaled=cScaled.getContext('2d',ctxOpt);
-const magCanvas=$('magCanvas'),magCtx=magCanvas.getContext('2d',ctxOpt);
-const cursorCan=$('cursorCanvas'),curCtx=cursorCan.getContext('2d',ctxOpt);
-const palette=$('palette'),sizeInfo=$('sizeInfo'),adjInfo=$('adjInfo');
-const fileInput=$('fileInput'),dropArea=$('dropArea'),renameInput=$('renameInput');
-const scaleIn=$('scaleInput'),opIn=$('opacityInput'),satIn=$('satInput');
-const opSpan=$('opVal'),satSpan=$('satVal');
-const pngBtn=$('pngBtn'),webpBtn=$('webpBtn'),avifBtn=$('avifBtn'),svgBtn=$('svgBtn'),b64Btn=$('b64Btn');
-const svgTA=$('svgCode'),copySvg=$('copySvg');
-const mag=$('magnifier'),colorRead=$('colorRead'),toast=$('toast');
-const batchChk=$('batchChk'),batchList=$('batchList');
+/* ---------- helpers / refs ---------- */
+const $ = id => document.getElementById(id);
+const ctxOpt = { willReadFrequently: true };
 
-/* state ---------------------------- */
-let origImg=null,origFile=null,origB64='';
-let scaledW=0,scaledH=0,lastSvg=null,sizeDirty=false,svgTimer=null,lastPal=[];
-let currentHex='',exporting=false,batchItems=[];
+const shareBtnTop = $('shareBtnTop');
+const cOrig = $('canvasOriginal'),
+      cScaled = $('canvasScaled');
+const ctxOrig   = cOrig.getContext('2d', ctxOpt),
+      ctxScaled = cScaled.getContext('2d', ctxOpt);
 
-/* helpers -------------------------- */
-const hex=(r,g,b)=>'#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
-const fmt=b=>`${(b/1024).toFixed(1)} KB`;
-const aspect=(w,h)=>{const g=(a,b)=>b?g(b,a%b):a,d=g(w,h);return w/d+':'+h/d;};
-const blob2url=b=>new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(b);});
-const loadImg=s=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=s;});
-function showToast(msg){toast.textContent=msg;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1800);}
-function saveBlob(blob,filename){
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=filename;a.click();
+const magCanvas = $('magCanvas'),
+      magCtx    = magCanvas.getContext('2d', ctxOpt);
+
+const cursorCan = $('cursorCanvas'),
+      curCtx    = cursorCan.getContext('2d', ctxOpt);
+
+const palette   = $('palette'),
+      sizeInfo  = $('sizeInfo'),
+      adjInfo   = $('adjInfo');
+
+const fileInput = $('fileInput'),
+      dropArea  = $('dropArea'),
+      renameInput = $('renameInput');
+
+const scaleIn = $('scaleInput'),
+      opIn    = $('opacityInput'),
+      satIn   = $('satInput');
+
+const opSpan = $('opVal'),
+      satSpan = $('satVal');
+
+const pngBtn  = $('pngBtn'),
+      webpBtn = $('webpBtn'),
+      avifBtn = $('avifBtn'),
+      svgBtn  = $('svgBtn'),
+      b64Btn  = $('b64Btn');
+
+const svgTA   = $('svgCode'),
+      copySvg = $('copySvg');
+
+const mag       = $('magnifier'),
+      colorRead = $('colorRead'),
+      toast      = $('toast');
+
+const batchChk  = $('batchChk'),
+      batchList = $('batchList');
+
+/* ---------- state ---------- */
+let origImg = null, origFile = null, origB64 = '';
+let scaledW = 0, scaledH = 0;
+let lastSvg = null, sizeDirty = false, svgTimer = null, lastPal = [];
+let currentHex = '', exporting = false, batchItems = [];
+
+/* ---------- utilities ---------- */
+const hex = (r, g, b) => '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+const fmt = b => `${(b / 1024).toFixed(1)} KB`;
+const aspect = (w, h) => { const g = (a, b) => b ? g(b, a % b) : a, d = g(w, h); return w / d + ':' + h / d; };
+const blob2url = b => new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(b); });
+const loadImg  = s => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = s; });
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+function saveBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
   URL.revokeObjectURL(url);
 }
-/* drag & drop ---------------------- */
-['dragenter','dragover'].forEach(evt=>document.addEventListener(evt,e=>e.preventDefault()));
-['dragenter','dragover'].forEach(evt=>dropArea.addEventListener(evt,()=>dropArea.style.background='#333'));
-['dragleave','drop' ].forEach(evt=>dropArea.addEventListener(evt,()=>dropArea.style.background=''));
-document.addEventListener('drop',e=>{e.preventDefault();handleFiles(e.dataTransfer.files);});
-fileInput.addEventListener('change',()=>handleFiles(fileInput.files));
 
-async function handleFiles(fileList){
-  if(batchChk.checked){
-    for(const f of fileList){
-      const b64=await blob2url(f);
-      batchItems.push({file:f,b64});
+function getOpaqueCanvas(srcCanvas) {
+  const cv = document.createElement('canvas');
+  cv.width  = srcCanvas.width;
+  cv.height = srcCanvas.height;
+  const ctx = cv.getContext('2d', { alpha: false });
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(srcCanvas, 0, 0);
+  return cv;
+}
+
+/* ---------- drag & drop ---------- */
+['dragenter', 'dragover'].forEach(evt => document.addEventListener(evt, e => e.preventDefault()));
+['dragenter', 'dragover'].forEach(evt => dropArea.addEventListener(evt, () => dropArea.style.background = '#333'));
+['dragleave', 'drop'].forEach(evt => dropArea.addEventListener(evt, () => dropArea.style.background = ''));
+
+document.addEventListener('drop', e => { e.preventDefault(); handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+async function handleFiles(fileList) {
+  if (batchChk.checked) {
+    for (const f of fileList) {
+      const b64 = await blob2url(f);
+      batchItems.push({ file: f, b64 });
     }
-    renderBatchList();enableButtons();
-  }else{
-    const f=fileList[0]; if(!f) return;
-    origFile=f;origB64=await blob2url(f);origImg=await loadImg(origB64);
-    batchItems=[];renderBatchList();
+    renderBatchList();
+    enableButtons();
+  } else {
+    const f = fileList[0];
+    if (!f) return;
+    origFile = f;
+    origB64  = await blob2url(f);
+    origImg  = await loadImg(origB64);
+    batchItems = [];
+    renderBatchList();
     initAfterLoad();
   }
 }
-/* batch list ----------------------- */
-function renderBatchList(){
-  if(!batchItems.length){batchList.style.display='none';batchList.innerHTML='';return;}
-  batchList.style.display='block';
-  batchList.innerHTML=batchItems.map((it,i)=>
+
+/* ---------- batch list ---------- */
+function renderBatchList() {
+  if (!batchItems.length) {
+    batchList.style.display = 'none';
+    batchList.innerHTML = '';
+    return;
+  }
+  batchList.style.display = 'block';
+  batchList.innerHTML = batchItems.map((it, i) =>
     `<li>${it.file.name}
-       <button data-rm="${i}" style="margin-left:4px;background:#ab2a2a;
-               padding:2px 6px;border:none;border-radius:4px;cursor:pointer;margin-bottom:2px">🗑️</button>
+       <button data-rm="${i}" style="margin-left:4px;background:#ab2a2a;padding:2px 6px;border:none;border-radius:4px;cursor:pointer;margin-bottom:2px">🗑️</button>
      </li>`).join('');
 }
-batchList.addEventListener('click',e=>{
-  if(e.target.dataset.rm){
-    batchItems.splice(+e.target.dataset.rm,1);renderBatchList();
+batchList.addEventListener('click', e => {
+  if (e.target.dataset.rm) {
+    batchItems.splice(+e.target.dataset.rm, 1);
+    renderBatchList();
   }
 });
-/* switch single/batch -------------- */
-batchChk.addEventListener('change',()=>{
-  fileInput.value='';fileInput.multiple=batchChk.checked;
-  dropArea.querySelector('span').textContent=batchChk.checked?
-    'Drop images here (batch)':'Click or drag an image here';
-  if(!batchChk.checked){batchItems=[];renderBatchList();}
+
+/* ---------- single/batch switch ---------- */
+batchChk.addEventListener('change', () => {
+  fileInput.value = '';
+  fileInput.multiple = batchChk.checked;
+  dropArea.querySelector('span').textContent = batchChk.checked ?
+    'Drop images here (batch)' : 'Click or drag an image here';
+  if (!batchChk.checked) { batchItems = []; renderBatchList(); }
 });
 
-/* main load ------------------------ */
-async function initAfterLoad(){
-  cOrig.width=origImg.width;cOrig.height=origImg.height;
-  ctxOrig.imageSmoothingEnabled=false;ctxOrig.drawImage(origImg,0,0);
-  $('originalInfo').innerHTML=`
+/* ---------- initial load ---------- */
+async function initAfterLoad() {
+  cOrig.width  = origImg.width;
+  cOrig.height = origImg.height;
+  ctxOrig.imageSmoothingEnabled = false;
+  ctxOrig.drawImage(origImg, 0, 0);
+
+  $('originalInfo').innerHTML = `
     <li><span>Name:</span><b>${origFile.name}</b></li>
     <li><span>File Size:</span><b>${fmt(origFile.size)}</b></li>
     <li><span>Dimensions:</span><b>${origImg.width}×${origImg.height}px</b></li>
-    <li><span>Aspect:</span><b>${aspect(origImg.width,origImg.height)}</b></li>`;
-  renameInput.value=origFile.name.replace(/\.[^.]+$/,'')+'-upscaled';
-  redraw();enableButtons();updateURL();
+    <li><span>Aspect:</span><b>${aspect(origImg.width, origImg.height)}</b></li>`;
+  renameInput.value = origFile.name.replace(/\.[^.]+$/, '') + '-upscaled';
+  redraw();
+  enableButtons();
+  updateURL();
 }
-/* URL share ------------------------ */
-function base64ToBlob(b64){const [p,d]=b64.split(',');const mime=p.match(/:(.*?);/)[1];
-  const bin=atob(d);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
-  return new Blob([u8],{type:mime});
+
+/* ---------- URL share ---------- */
+function base64ToBlob(b64) {
+  const [p, d] = b64.split(',');
+  const mime   = p.match(/:(.*?);/)[1];
+  const bin    = atob(d);
+  const u8     = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return new Blob([u8], { type: mime });
 }
-function updateURL(){
-  const url=new URL(location.href.split('?')[0]);
-  url.searchParams.set('img',encodeURIComponent(origB64));
-  url.searchParams.set('name',encodeURIComponent(origFile.name));
-  history.pushState({uploaded:true},'',url);
+
+function updateURL() {
+  const url = new URL(location.href.split('?')[0]);
+  url.searchParams.set('img', encodeURIComponent(origB64));
+  url.searchParams.set('name', encodeURIComponent(origFile.name));
+  history.pushState({ uploaded: true }, '', url);
 }
-shareBtnTop.onclick=()=>{if(!origImg)return;updateURL();
-  navigator.clipboard.writeText(location.href).then(()=>showToast('Share-link copied!'));
+shareBtnTop.onclick = () => {
+  if (!origImg) return;
+  updateURL();
+  navigator.clipboard.writeText(location.href).then(() => showToast('Share-link copied!'));
 };
-/* sliders -------------------------- */
-[scaleIn,opIn,satIn].forEach(el=>el.addEventListener('input',()=>{
-  opSpan.textContent=opIn.value+'%';satSpan.textContent=satIn.value+'%';redraw();
-}));
-/* redraw --------------------------- */
-function redraw(){
-  if(!origImg)return;
-  const scale=Math.max(10,Math.min(10000,+scaleIn.value))/100;
-  const alpha=+opIn.value/100,sat=+satIn.value/100;
-  scaledW=Math.round(origImg.width*scale);scaledH=Math.round(origImg.height*scale);
-  cScaled.width=scaledW;cScaled.height=scaledH;
-  const off=new OffscreenCanvas(origImg.width,origImg.height),
-        octx=off.getContext('2d',ctxOpt);
-  octx.drawImage(origImg,0,0);
-  const img=octx.getImageData(0,0,origImg.width,origImg.height);
-  satAdjust(img.data,sat);octx.putImageData(img,0,0);
-  ctxScaled.imageSmoothingEnabled=false;
-  ctxScaled.clearRect(0,0,scaledW,scaledH);
-  ctxScaled.globalAlpha=alpha;
-  ctxScaled.drawImage(off,0,0,scaledW,scaledH);
-  ctxScaled.globalAlpha=1;
-  adjInfo.querySelector('[data-info="dims"] b').textContent=`${scaledW}×${scaledH}px`;
-  adjInfo.querySelector('[data-info="aspect"] b').textContent=aspect(scaledW,scaledH);
-  extractPalette(off);scheduleSvg();sizeDirty=true;
+
+/* ---------- sliders ---------- */
+[scaleIn, opIn, satIn].forEach(el =>
+  el.addEventListener('input', () => {
+    opSpan.textContent  = opIn.value  + '%';
+    satSpan.textContent = satIn.value + '%';
+    redraw();
+  })
+);
+
+/* ---------- redraw ---------- */
+function redraw() {
+  if (!origImg) return;
+
+  const scale = Math.max(10, Math.min(10000, +scaleIn.value)) / 100;
+  const alpha = +opIn.value / 100;
+  const sat   = +satIn.value / 100;
+
+  scaledW = Math.round(origImg.width  * scale);
+  scaledH = Math.round(origImg.height * scale);
+
+  cScaled.width  = scaledW;
+  cScaled.height = scaledH;
+
+  const off  = new OffscreenCanvas(origImg.width, origImg.height);
+  const octx = off.getContext('2d', ctxOpt);
+  octx.drawImage(origImg, 0, 0);
+  const img = octx.getImageData(0, 0, origImg.width, origImg.height);
+  satAdjust(img.data, sat);
+  octx.putImageData(img, 0, 0);
+
+  ctxScaled.imageSmoothingEnabled = false;
+  ctxScaled.clearRect(0, 0, scaledW, scaledH);
+  ctxScaled.globalAlpha = alpha;
+  ctxScaled.drawImage(off, 0, 0, scaledW, scaledH);
+  ctxScaled.globalAlpha = 1;
+
+  adjInfo.querySelector('[data-info="dims"] b').textContent    = `${scaledW}×${scaledH}px`;
+  adjInfo.querySelector('[data-info="aspect"] b').textContent  = aspect(scaledW, scaledH);
+
+  extractPalette(off);
+  scheduleSvg();
+  sizeDirty = true;
 }
-/* satAdjust ----------------------- */
-function satAdjust(d,s){for(let i=0;i<d.length;i+=4){
-  const r=d[i],g=d[i+1],b=d[i+2],l=0.2126*r+0.7152*g+0.0722*b;
-  d[i]=l+(r-l)*s;d[i+1]=l+(g-l)*s;d[i+2]=l+(b-l)*s;}
-}
-/* palette ------------------------- */
-function extractPalette(off){
-  const {width:w,height:h}=off,{data}=off.getContext('2d').getImageData(0,0,w,h);
-  const map=new Map();
-  for(let i=0;i<data.length;i+=4){
-    if(data[i+3]){const h=hex(data[i],data[i+1],data[i+2]);
-      map.set(h,(map.get(h)||0)+1);}
+
+function satAdjust(d, s) {
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    d[i]     = l + (r - l) * s;
+    d[i + 1] = l + (g - l) * s;
+    d[i + 2] = l + (b - l) * s;
   }
-  const list=[...map.entries()].sort((a,b)=>b[1]-a[1]).map(e=>e[0]).slice(0,32);
-  if(JSON.stringify(list)===JSON.stringify(lastPal))return;lastPal=list;
-  palette.innerHTML='';
-  list.forEach(h=>{
-    const d=document.createElement('div');
-    d.className='swatch';d.style.background=h;d.innerHTML=`<span>${h}</span>`;
-    d.onclick=()=>navigator.clipboard.writeText(h);
+}
+
+/* ---------- palette ---------- */
+function extractPalette(off) {
+  const { width: w, height: h } = off;
+  const { data } = off.getContext('2d').getImageData(0, 0, w, h);
+  const map = new Map();
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3]) {
+      const col = hex(data[i], data[i + 1], data[i + 2]);
+      map.set(col, (map.get(col) || 0) + 1);
+    }
+  }
+  const list = [...map.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]).slice(0, 32);
+  if (JSON.stringify(list) === JSON.stringify(lastPal)) return;
+  lastPal = list;
+
+  palette.innerHTML = '';
+  list.forEach(h => {
+    const d = document.createElement('div');
+    d.className = 'swatch';
+    d.style.background = h;
+    d.innerHTML = `<span>${h}</span>`;
+    d.onclick = () => navigator.clipboard.writeText(h);
     palette.appendChild(d);
   });
-  adjInfo.querySelector('[data-info="colors"] b').textContent=map.size;
+  adjInfo.querySelector('[data-info="colors"] b').textContent = map.size;
 }
-/* svg render ---------------------- */
-function scheduleSvg(){clearTimeout(svgTimer);svgTimer=setTimeout(makeSvg,300);}
+
+/* ---------- SVG ---------- */
+let makeSvgTimer;
+function scheduleSvg() { clearTimeout(svgTimer); svgTimer = setTimeout(makeSvg, 300); }
+
 function makeSvg() {
   if (!scaledW || !scaledH) return;
 
-  const w = scaledW;
-  const h = scaledH;
-
+  const w = scaledW, h = scaledH;
   const off  = new OffscreenCanvas(w, h);
   const octx = off.getContext('2d', ctxOpt);
   octx.imageSmoothingEnabled = false;
@@ -506,9 +616,7 @@ function makeSvg() {
   const img = octx.getImageData(0, 0, w, h);
   const d   = img.data;
 
-  const rects  = new Map();
-  const active = new Map();
-
+  const rects = new Map(), active = new Map();
   for (let y = 0; y < h; y++) {
     const nxt = new Map();
     for (let x = 0; x < w;) {
@@ -519,19 +627,18 @@ function makeSvg() {
       let run = 1;
       while (x + run < w) {
         const j = (y * w + x + run) * 4;
-        if (d[j]   !== d[i]   || d[j+1] !== d[i+1] ||
-            d[j+2] !== d[i+2] || d[j+3] !== d[i+3]) break;
+        if (d[j] !== d[i] || d[j + 1] !== d[i + 1] || d[j + 2] !== d[i + 2] || d[j + 3] !== d[i + 3]) break;
         run++;
       }
 
-      if (!rects.has(key))  rects.set(key, []);
+      if (!rects.has(key)) rects.set(key, []);
       if (!active.has(key)) active.set(key, new Map());
 
       const rk = x + '|' + run;
       const pm = active.get(key);
       let rc;
       if (pm.has(rk)) { rc = pm.get(rk); rc.h += 1; }
-      else            { rc = { x, y, w: run, h: 1 }; }
+      else { rc = { x, y, w: run, h: 1 }; }
 
       if (!nxt.has(key)) nxt.set(key, new Map());
       nxt.get(key).set(rk, rc);
@@ -550,141 +657,192 @@ function makeSvg() {
   for (const [k, arr] of rects) {
     const [fill, a] = k.split('|');
     let path = '';
-    arr.forEach(rc => {
-      path += `M${rc.x} ${rc.y}h${rc.w}v${rc.h}h-${rc.w}z`;
-    });
+    arr.forEach(rc => { path += `M${rc.x} ${rc.y}h${rc.w}v${rc.h}h-${rc.w}z`; });
     svg += `<path fill="${fill}"${a < 1 ? ` fill-opacity="${a}"` : ''} d="${path}"/>`;
   }
   svg += '</svg>';
 
   svgTA.value = svg;
-  lastSvg = new Blob([svg], { type: 'image/svg+xml' });
-  sizeDirty = true;
+  lastSvg     = new Blob([svg], { type: 'image/svg+xml' });
+  sizeDirty   = true;
 }
-/* size ticker --------------------- */
-setInterval(()=>{if(sizeDirty){sizeDirty=false;updateSizes();}},1000);
-function updateSizes(){
-  const tgt=t=>sizeInfo.querySelector(`[data-size="${t}"] b`);
-  cScaled.toBlob(b=>tgt('png').textContent=fmt(b.size),'image/png');
-  cScaled.toBlob(b=>tgt('webp').textContent=fmt(b.size),'image/webp');
-  cScaled.toBlob(b=>tgt('avif').textContent=fmt(b.size),'image/avif');
-  if(lastSvg)tgt('svg').textContent=fmt(lastSvg.size);
-}
-/* buttons download --------------- */
-enableButtons(false);
-function enableButtons(on=true){
-  [pngBtn,webpBtn,avifBtn,svgBtn,b64Btn,shareBtnTop]
-    .forEach(b=>b.disabled=!on);
-}
-/* button Base64 single ------------- */
-b64Btn.onclick = () => {
-  if (batchChk.checked) {
-    downloadBatch('b64');
-  } else {
-    navigator.clipboard
-      .writeText(cScaled.toDataURL('image/png'))
-      .then(() => showToast('Base64 copied!'));
+
+/* ---------- size ticker ---------- */
+setInterval(() => { if (sizeDirty) { sizeDirty = false; updateSizes(); } }, 1000);
+
+function updateSizes() {
+  const tgt = t => sizeInfo.querySelector(`[data-size="${t}"] b`);
+
+  const baseCanvas = (+opIn.value === 100)
+    ? getOpaqueCanvas(cScaled)
+    : cScaled;
+
+  baseCanvas.toBlob(blob => {
+    tgt('png').textContent = fmt(blob.size);
+  }, 'image/png');
+
+  baseCanvas.toBlob(blob => {
+    tgt('webp').textContent = fmt(blob.size);
+  }, 'image/webp');
+
+  baseCanvas.toBlob(blob => {
+    tgt('avif').textContent = fmt(blob.size);
+  }, 'image/avif');
+
+  if (lastSvg) {
+    tgt('svg').textContent = fmt(lastSvg.size);
   }
+}
+
+/* ---------- buttons ---------- */
+enableButtons(false);
+function enableButtons(on = true) {
+  [pngBtn, webpBtn, avifBtn, svgBtn, b64Btn, shareBtnTop].forEach(b => b.disabled = !on);
+}
+
+/* ---------- base64 single ---------- */
+b64Btn.onclick = () => {
+  const baseCanvas = (+opIn.value === 100) ? getOpaqueCanvas(cScaled) : cScaled;
+  navigator.clipboard.writeText(baseCanvas.toDataURL('image/png'))
+    .then(() => showToast('Base64 copied!'));
 };
-/* download ------ */
-pngBtn.onclick =()=>downloadBatch('png');
-webpBtn.onclick=()=>downloadBatch('webp');
-avifBtn.onclick=()=>downloadBatch('avif');
-svgBtn.onclick =()=>downloadBatch('svg');
 
-async function downloadBatch(format){
-  if(batchChk.checked){
-    if(exporting||!batchItems.length)return;
-    exporting=true;showToast('Creating ZIP…');
-    const zip=new JSZip();
+/* ---------- download ---------- */
+pngBtn .onclick = () => downloadBatch('png' );
+webpBtn.onclick = () => downloadBatch('webp');
+avifBtn.onclick = () => downloadBatch('avif');
+svgBtn .onclick = () => downloadBatch('svg' );
 
-    for(const item of batchItems){
+async function downloadBatch(format) {
+  if (batchChk.checked) {
+    /* -------- batch mode -------- */
+    if (exporting || !batchItems.length) return;
+    exporting = true;
+    showToast('Creating ZIP…');
+    const zip = new JSZip();
+
+    for (const item of batchItems) {
       origImg = await loadImg(item.b64);
       redraw();
 
-      const base = item.file.name.replace(/\.[^.]+$/,'');
-      if(format==='svg'){
+      const base = item.file.name.replace(/\.[^.]+$/, '');
+
+      if (format === 'svg') {
         await makeSvg();
-        zip.file(`${base}.svg`,lastSvg);
-      } else if(format==='b64'){
-        const dataUrl = cScaled.toDataURL('image/png');
+        zip.file(`${base}.svg`, lastSvg);
+
+      } else if (format === 'b64') {
+        const can = (+opIn.value === 100) ? getOpaqueCanvas(cScaled) : cScaled;
+        const dataUrl = can.toDataURL('image/png');
         zip.file(`${base}.txt`, dataUrl);
-      } else {
-        await new Promise(res=>{
-          cScaled.toBlob(b=>{
-            zip.file(`${base}.${format}`, b);
-            res();
-          },`image/${format}`);
+
+      } else { /* png / webp / avif */
+        const can = (+opIn.value === 100) ? getOpaqueCanvas(cScaled) : cScaled;
+        await new Promise(res => {
+          can.toBlob(b => { zip.file(`${base}.${format}`, b); res(); }, `image/${format}`);
         });
       }
     }
 
-    const blob = await zip.generateAsync({type:'blob'});
+    const blob = await zip.generateAsync({ type: 'blob' });
     saveBlob(blob, `${format}.zip`);
-    exporting=false;showToast('ZIP exported!');
-  } else {                 // ---------- modo single (inalterado)
-    if(!origImg){showToast('No image');return;}
-    if(format==='svg'){makeSvg();saveBlob(lastSvg,`${renameInput.value}.svg`);}
-    else if(format==='b64'){
-      navigator.clipboard
-        .writeText(cScaled.toDataURL('image/png'))
-        .then(()=>showToast('Base64 copied!'));
+    exporting = false;
+    showToast('ZIP exported!');
+
+  } else {
+    /* -------- single mode -------- */
+    if (!origImg) { showToast('No image'); return; }
+
+    if (format === 'svg') {
+      makeSvg();
+      saveBlob(lastSvg, `${renameInput.value}.svg`);
+
+    } else if (format === 'b64') {
+      const can = (+opIn.value === 100) ? getOpaqueCanvas(cScaled) : cScaled;
+      navigator.clipboard.writeText(can.toDataURL('image/png'))
+        .then(() => showToast('Base64 copied!'));
+
     } else {
-      cScaled.toBlob(b=>saveBlob(b,`${renameInput.value}.${format}`),`image/${format}`);
+      const can = (+opIn.value === 100) ? getOpaqueCanvas(cScaled) : cScaled;
+      can.toBlob(b => saveBlob(b, `${renameInput.value}.${format}`), `image/${format}`);
     }
   }
 }
-/* copy svg ----------------------- */
-copySvg.onclick=()=>navigator.clipboard.writeText(svgTA.value)
-  .then(()=>{copySvg.textContent='Copied!';showToast('SVG copied!');
-             setTimeout(()=>copySvg.textContent='Copy',1200);});
-/* magnifier ---------------------- */
-function colorToCursor(hex){
-  curCtx.clearRect(0,0,16,16);curCtx.fillStyle=hex;
-  curCtx.beginPath();curCtx.arc(8,8,7,0,Math.PI*2);curCtx.fill();
-  curCtx.strokeStyle='#fff';curCtx.lineWidth=1;curCtx.stroke();
+
+/* ---------- copy SVG code ---------- */
+copySvg.onclick = () =>
+  navigator.clipboard.writeText(svgTA.value)
+    .then(() => {
+      copySvg.textContent = 'Copied!';
+      showToast('SVG copied!');
+      setTimeout(() => copySvg.textContent = 'Copy', 1200);
+    });
+
+/* ---------- magnifier ---------- */
+function colorToCursor(hex) {
+  curCtx.clearRect(0, 0, 16, 16);
+  curCtx.fillStyle = hex;
+  curCtx.beginPath();
+  curCtx.arc(8, 8, 7, 0, Math.PI * 2);
+  curCtx.fill();
+  curCtx.strokeStyle = '#fff';
+  curCtx.lineWidth = 1;
+  curCtx.stroke();
   return cursorCan.toDataURL('image/png');
 }
-magCanvas.width=magCanvas.height=160;const mS=160,mZ=4;
-function magnifierHandler(e){
-  if(!origImg)return;
-  const r=cScaled.getBoundingClientRect(),
-        x=Math.floor((e.clientX-r.left)/r.width*cScaled.width),
-        y=Math.floor((e.clientY-r.top)/r.height*cScaled.height);
-  const sx=Math.max(0,Math.min(cScaled.width-mS/mZ,x-mS/(2*mZ))),
-        sy=Math.max(0,Math.min(cScaled.height-mS/mZ,y-mS/(2*mZ)));
-  magCtx.imageSmoothingEnabled=false;magCtx.clearRect(0,0,mS,mS);
-  magCtx.drawImage(cScaled,sx,sy,mS/mZ,mS/mZ,0,0,mS,mS);
-  mag.style.left=e.pageX-mS/2+'px';mag.style.top=e.pageY-mS/2+'px';
-  const px=ctxScaled.getImageData(x,y,1,1).data,h=hex(px[0],px[1],px[2]);
-  currentHex=h;
-  colorRead.innerText=`${h}\nrgb(${px[0]},${px[1]},${px[2]})`;
-  colorRead.style.left=e.pageX+'px';colorRead.style.top=e.pageY+mS/2+8+'px';
-  cScaled.style.cursor=`url(${colorToCursor(h)}) 8 8,crosshair`;
+
+magCanvas.width = magCanvas.height = 160;
+const mS = 160, mZ = 4;
+
+function magnifierHandler(e) {
+  if (!origImg) return;
+  const r = cScaled.getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left) / r.width  * cScaled.width);
+  const y = Math.floor((e.clientY - r.top ) / r.height * cScaled.height);
+  const sx = Math.max(0, Math.min(cScaled.width  - mS / mZ, x - mS / (2 * mZ)));
+  const sy = Math.max(0, Math.min(cScaled.height - mS / mZ, y - mS / (2 * mZ)));
+
+  magCtx.imageSmoothingEnabled = false;
+  magCtx.clearRect(0, 0, mS, mS);
+  magCtx.drawImage(cScaled, sx, sy, mS / mZ, mS / mZ, 0, 0, mS, mS);
+
+  mag.style.left = e.pageX - mS / 2 + 'px';
+  mag.style.top  = e.pageY - mS / 2 + 'px';
+
+  const px = ctxScaled.getImageData(x, y, 1, 1).data;
+  const h  = hex(px[0], px[1], px[2]);
+  currentHex = h;
+  colorRead.innerText = `${h}\nrgb(${px[0]},${px[1]},${px[2]})`;
+  colorRead.style.left = e.pageX + 'px';
+  colorRead.style.top  = e.pageY + mS / 2 + 8 + 'px';
+  cScaled.style.cursor = `url(${colorToCursor(h)}) 8 8,crosshair`;
 }
-cScaled.addEventListener('mouseenter',()=>{if(origImg){mag.style.display=colorRead.style.display='block';}});
-cScaled.addEventListener('mouseleave',()=>{mag.style.display=colorRead.style.display='none';cScaled.style.cursor='crosshair';});
-cScaled.addEventListener('mousemove',magnifierHandler);
-cScaled.addEventListener('click',e=>{
-  const mr=mag.getBoundingClientRect();
-  if(e.clientX>=mr.left&&e.clientX<=mr.right&&e.clientY>=mr.top&&e.clientY<=mr.bottom){
-    if(!currentHex)return;
+
+cScaled.addEventListener('mouseenter', () => { if (origImg) { mag.style.display = colorRead.style.display = 'block'; } });
+cScaled.addEventListener('mouseleave', () => { mag.style.display = colorRead.style.display = 'none'; cScaled.style.cursor = 'crosshair'; });
+cScaled.addEventListener('mousemove', magnifierHandler);
+cScaled.addEventListener('click', e => {
+  const mr = mag.getBoundingClientRect();
+  if (e.clientX >= mr.left && e.clientX <= mr.right && e.clientY >= mr.top && e.clientY <= mr.bottom) {
+    if (!currentHex) return;
     navigator.clipboard.writeText(currentHex)
-      .then(()=>showToast(`Color ${currentHex} copied!`))
-      .catch(()=>showToast('Failed to copy color'));
+      .then(() => showToast(`Color ${currentHex} copied!`))
+      .catch(() => showToast('Failed to copy color'));
   }
 });
-/* init from URL ------------------- */
-(function initFromURL(){
-  const p=new URLSearchParams(location.search);
-  if(!p.has('img'))return;
-  const b64=decodeURIComponent(p.get('img')),
-        fname=decodeURIComponent(p.get('name')||'shared.png');
-  origFile=new File([base64ToBlob(b64)],fname,{type:'image/png'});
-  origB64=b64;
-  loadImg(b64).then(img=>{origImg=img;initAfterLoad();});
+
+/* ---------- init from URL ---------- */
+(function initFromURL() {
+  const p = new URLSearchParams(location.search);
+  if (!p.has('img')) return;
+  const b64   = decodeURIComponent(p.get('img'));
+  const fname = decodeURIComponent(p.get('name') || 'shared.png');
+  origFile = new File([base64ToBlob(b64)], fname, { type: 'image/png' });
+  origB64  = b64;
+  loadImg(b64).then(img => { origImg = img; initAfterLoad(); });
 })();
 </script>
+
 <script>"serviceWorker"in navigator&&navigator.serviceWorker.register("sw.js");</script>
 </body>
 </html>
