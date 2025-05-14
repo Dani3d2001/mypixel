@@ -46,7 +46,7 @@
 
 > Notice the crisp edges and preserved block shapes in both PNG and SVG—no blur, no distortion.
 >
-> **Art credit:** Original pixel art by [F404X](https://github.com/F404X)
+> **Art credit:** Original pixel art by [F404X](https://x.com/F404XdoesARTS)
 ---
 
 ## 🚀 Quick Start
