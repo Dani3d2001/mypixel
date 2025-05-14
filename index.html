@@ -492,51 +492,74 @@ function extractPalette(off){
 }
 /* svg render ---------------------- */
 function scheduleSvg(){clearTimeout(svgTimer);svgTimer=setTimeout(makeSvg,300);}
-function makeSvg(){
-  if(!origImg)return;
-  const scale=Math.max(10,Math.min(10000,+scaleIn.value))/100,
-        alpha=+opIn.value/100,sat=+satIn.value/100;
-  const w=origImg.width,h=origImg.height,off=new OffscreenCanvas(w,h),
-        octx=off.getContext('2d',ctxOpt);
-  octx.drawImage(origImg,0,0);
-  const img=octx.getImageData(0,0,w,h);satAdjust(img.data,sat);octx.putImageData(img,0,0);
-  const d=img.data,rects=new Map(),active=new Map();
-  for(let y=0;y<h;y++){
-    const nxt=new Map();
-    for(let x=0;x<w;){
-      const i=(y*w+x)*4;if(!d[i+3]){x++;continue;}
-      const r=d[i],g=d[i+1],b=d[i+2],a=d[i+3];
-      const key=hex(r,g,b)+'|'+((a/255*alpha).toFixed(3));
-      let run=1; while(x+run<w){
-        const j=(y*w+x+run)*4;
-        if(d[j]!==r||d[j+1]!==g||d[j+2]!==b||d[j+3]!==a)break;run++;
+function makeSvg() {
+  if (!scaledW || !scaledH) return;
+
+  const w = scaledW;
+  const h = scaledH;
+
+  const off  = new OffscreenCanvas(w, h);
+  const octx = off.getContext('2d', ctxOpt);
+  octx.imageSmoothingEnabled = false;
+  octx.drawImage(cScaled, 0, 0);
+
+  const img = octx.getImageData(0, 0, w, h);
+  const d   = img.data;
+
+  const rects  = new Map();
+  const active = new Map();
+
+  for (let y = 0; y < h; y++) {
+    const nxt = new Map();
+    for (let x = 0; x < w;) {
+      const i = (y * w + x) * 4;
+      if (!d[i + 3]) { x++; continue; }
+
+      const key = hex(d[i], d[i + 1], d[i + 2]) + '|' + (d[i + 3] / 255).toFixed(3);
+      let run = 1;
+      while (x + run < w) {
+        const j = (y * w + x + run) * 4;
+        if (d[j]   !== d[i]   || d[j+1] !== d[i+1] ||
+            d[j+2] !== d[i+2] || d[j+3] !== d[i+3]) break;
+        run++;
       }
-      if(!rects.has(key))rects.set(key,[]);
-      if(!active.has(key))active.set(key,new Map());
-      const rk=x+'|'+run,pm=active.get(key);
-      let rc; if(pm.has(rk)){rc=pm.get(rk);rc.h+=1;}
-      else{rc={x,y,w:run,h:1};}
-      if(!nxt.has(key))nxt.set(key,new Map());
-      nxt.get(key).set(rk,rc);x+=run;
+
+      if (!rects.has(key))  rects.set(key, []);
+      if (!active.has(key)) active.set(key, new Map());
+
+      const rk = x + '|' + run;
+      const pm = active.get(key);
+      let rc;
+      if (pm.has(rk)) { rc = pm.get(rk); rc.h += 1; }
+      else            { rc = { x, y, w: run, h: 1 }; }
+
+      if (!nxt.has(key)) nxt.set(key, new Map());
+      nxt.get(key).set(rk, rc);
+      x += run;
     }
-    for(const [k,m] of active){
-      const n=nxt.get(k);
-      for(const [rk,rc] of m)if(!n||!n.has(rk))rects.get(k).push(rc);
+    for (const [k, m] of active) {
+      const n = nxt.get(k);
+      for (const [rk, rc] of m) if (!n || !n.has(rk)) rects.get(k).push(rc);
     }
-    active.clear();for(const [k,m] of nxt)active.set(k,m);
+    active.clear();
+    for (const [k, m] of nxt) active.set(k, m);
   }
-  for(const [k,m] of active)for(const rc of m.values())rects.get(k).push(rc);
-  let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${w*scale}" height="${h*scale}" shape-rendering="crispEdges">`;
-  for(const [k,arr] of rects){
-    const [fill,a]=k.split('|');let path='';
-    arr.forEach(rc=>{
-      const X=rc.x*scale,Y=rc.y*scale,W=rc.w*scale,H=rc.h*scale;
-      path+=`M${X} ${Y}h${W}v${H}h-${W}z`;
+  for (const [k, m] of active) for (const rc of m.values()) rects.get(k).push(rc);
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">`;
+  for (const [k, arr] of rects) {
+    const [fill, a] = k.split('|');
+    let path = '';
+    arr.forEach(rc => {
+      path += `M${rc.x} ${rc.y}h${rc.w}v${rc.h}h-${rc.w}z`;
     });
-    svg+=`<path fill="${fill}"${a<1?` fill-opacity="${a}"`:''} d="${path}"/>`;
+    svg += `<path fill="${fill}"${a < 1 ? ` fill-opacity="${a}"` : ''} d="${path}"/>`;
   }
-  svg+='</svg>';
-  svgTA.value=svg;lastSvg=new Blob([svg],{type:'image/svg+xml'});sizeDirty=true;
+  svg += '</svg>';
+
+  svgTA.value = svg;
+  lastSvg = new Blob([svg], { type: 'image/svg+xml' });
+  sizeDirty = true;
 }
 /* size ticker --------------------- */
 setInterval(()=>{if(sizeDirty){sizeDirty=false;updateSizes();}},1000);
