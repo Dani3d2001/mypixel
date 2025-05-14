@@ -28,14 +28,18 @@
 <table>
   <tr>
     <th>Original (32×64)</th>
-    <th>MyPixel Upscaled (320×640)</th>
+    <th>Upscaled PNG (320×640)</th>
+    <th>Vector SVG (320×640)</th>
   </tr>
   <tr>
     <td align="center">
-      <img src="download.png" alt="Original Pixel Art" width="160" />
+      <img src="demo/original.png" alt="Original Pixel Art" width="320" />
     </td>
     <td align="center">
-      <img src="demo/original.png" alt="demo/modified.png" width="320" />
+      <img src="demo/modified.png" alt="Upscaled Pixel Art (PNG)" width="320" />
+    </td>
+    <td align="center">
+      <img src="demo/modified.svg" alt="Upscaled Pixel Art (SVG)" width="320" />
     </td>
   </tr>
 </table>
